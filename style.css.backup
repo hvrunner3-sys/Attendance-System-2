@@ -9,14 +9,14 @@
    ============================================================ */
 
 :root {
-    /* Colors - Indigo Primary Theme */
-    --primary: #4F46E5;
-    --primary-light: #6366F1;
-    --primary-dark: #4338CA;
+    /* Colors */
+    --primary: #1E40AF;
+    --primary-light: #3B82F6;
+    --primary-dark: #1E3A8A;
     --success: #10B981;
     --danger: #EF4444;
     --warning: #F59E0B;
-    --info: #4F46E5;
+    --info: #3B82F6;
     --neutral-50: #F9FAFB;
     --neutral-100: #F3F4F6;
     --neutral-200: #E5E7EB;
@@ -165,7 +165,7 @@ a:hover {
     font-size: var(--font-size-base);
     font-weight: 600;
     cursor: pointer;
-    transition: all 180ms ease-out;
+    transition: all var(--transition-fast);
     user-select: none;
     -webkit-user-select: none;
     touch-action: manipulation;
@@ -173,12 +173,8 @@ a:hover {
     min-width: 44px;
 }
 
-.btn:hover:not(:disabled) {
-    transform: scale(1.02);
-}
-
 .btn:active {
-    transform: scale(0.95);
+    transform: scale(0.98);
 }
 
 .btn:disabled {
@@ -365,8 +361,7 @@ select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 input[type="file"] {
@@ -398,12 +393,6 @@ textarea {
     margin-bottom: var(--spacing-2);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--neutral-100);
-    transition: all 200ms ease-out;
-}
-
-.card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
 }
 
 .card h2 {
@@ -702,7 +691,7 @@ textarea {
 }
 
 .menu-item.active {
-    background-color: rgba(79, 70, 229, 0.1);
+    background-color: rgba(30, 64, 175, 0.1);
     color: var(--primary);
     border-right: 3px solid var(--primary);
 }
@@ -1123,18 +1112,16 @@ textarea {
     left: var(--spacing-2);
     right: var(--spacing-2);
     padding: var(--spacing-2) var(--spacing-3);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     background-color: var(--neutral-900);
     color: white;
     font-size: var(--font-size-sm);
-    font-weight: 500;
     z-index: 2000;
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
     display: none;
-    animation: slideUp 200ms ease-out;
-    box-shadow: var(--shadow-xl);
+    animation: slideUp var(--transition-normal);
 }
 
 .toast.show {
@@ -1151,239 +1138,6 @@ textarea {
 
 .toast.warning {
     background-color: var(--warning);
-}
-
-/* ============================================================
-   NOTIFICATION BELL & DROPDOWN
-   ============================================================ */
-
-.notification-bell {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-md);
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--neutral-700);
-    transition: all 180ms ease-out;
-}
-
-.notification-bell:hover {
-    background-color: var(--neutral-100);
-    transform: scale(1.05);
-}
-
-.notification-bell:active {
-    transform: scale(0.95);
-}
-
-.notification-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background-color: var(--danger);
-    color: white;
-    border-radius: 10px;
-    min-width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 0 4px;
-    animation: notificationPulse 2s ease-out infinite;
-}
-
-.notification-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: 360px;
-    max-width: 90vw;
-    max-height: 480px;
-    background-color: white;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    z-index: 1001;
-    display: none;
-    animation: slideInDown 200ms ease-out;
-    overflow: hidden;
-}
-
-.notification-dropdown.active {
-    display: flex;
-    flex-direction: column;
-}
-
-.notification-header {
-    padding: var(--spacing-2);
-    border-bottom: 1px solid var(--neutral-200);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.notification-header h3 {
-    margin: 0;
-    font-size: var(--font-size-base);
-}
-
-.mark-all-read {
-    color: var(--primary);
-    font-size: var(--font-size-sm);
-    cursor: pointer;
-    transition: color 150ms ease-out;
-}
-
-.mark-all-read:hover {
-    color: var(--primary-dark);
-}
-
-.notification-list {
-    overflow-y: auto;
-    max-height: 400px;
-}
-
-.notification-item {
-    padding: var(--spacing-2);
-    border-bottom: 1px solid var(--neutral-100);
-    cursor: pointer;
-    transition: all 150ms ease-out;
-    display: flex;
-    gap: var(--spacing-2);
-}
-
-.notification-item:hover {
-    background-color: var(--neutral-50);
-}
-
-.notification-item.unread {
-    background-color: rgba(79, 70, 229, 0.05);
-}
-
-.notification-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--primary);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 18px;
-}
-
-.notification-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.notification-title {
-    font-weight: 600;
-    margin-bottom: 4px;
-    font-size: var(--font-size-sm);
-}
-
-.notification-message {
-    color: var(--neutral-600);
-    font-size: var(--font-size-xs);
-    margin-bottom: 4px;
-}
-
-.notification-time {
-    color: var(--neutral-400);
-    font-size: var(--font-size-xs);
-}
-
-.notification-empty {
-    padding: var(--spacing-4);
-    text-align: center;
-    color: var(--neutral-500);
-}
-
-/* ============================================================
-   CONTACT DIRECTORY STYLES
-   ============================================================ */
-
-.contact-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-}
-
-.contact-item {
-    background-color: white;
-    border: 1px solid var(--neutral-200);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 180ms ease-out;
-}
-
-.contact-item:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-}
-
-.contact-info h3 {
-    margin: 0 0 4px 0;
-    font-size: var(--font-size-base);
-}
-
-.contact-info p {
-    margin: 0;
-    font-size: var(--font-size-sm);
-    color: var(--neutral-600);
-}
-
-.contact-actions {
-    display: flex;
-    gap: var(--spacing-1);
-}
-
-/* ============================================================
-   ADMIN LIST STYLES
-   ============================================================ */
-
-.admin-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-2);
-}
-
-.admin-item {
-    background-color: white;
-    border: 1px solid var(--neutral-200);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-2);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 180ms ease-out;
-}
-
-.admin-item:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-}
-
-.admin-info h3 {
-    margin: 0 0 4px 0;
-    font-size: var(--font-size-base);
-}
-
-.admin-info p {
-    margin: 0;
-    font-size: var(--font-size-sm);
-    color: var(--neutral-600);
 }
 
 /* ============================================================
@@ -1459,17 +1213,6 @@ textarea {
 @keyframes spin {
     to {
         transform: rotate(360deg);
-    }
-}
-
-@keyframes notificationPulse {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.1);
-        opacity: 0.8;
     }
 }
 

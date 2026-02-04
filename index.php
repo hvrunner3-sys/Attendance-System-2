@@ -117,6 +117,27 @@ if (!is_logged_in()) {
                         <p><?php echo date('l, M d'); ?></p>
                     </div>
                     <div class="header-actions">
+                        <button class="notification-bell" onclick="toggleNotifications()" style="position: relative;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <?php
+                            $unread_count = get_unread_notification_count($db, get_user_id());
+                            if ($unread_count > 0):
+                            ?>
+                            <span class="notification-badge" id="notificationBadge"><?php echo $unread_count; ?></span>
+                            <?php endif; ?>
+                        </button>
+                        <div id="notificationDropdown" class="notification-dropdown">
+                            <div class="notification-header">
+                                <h3>Notifications</h3>
+                                <span class="mark-all-read" onclick="markAllNotificationsRead()">Mark all read</span>
+                            </div>
+                            <div class="notification-list" id="notificationList">
+                                <div class="notification-empty">Loading...</div>
+                            </div>
+                        </div>
                         <button class="btn-icon" onclick="toggleMenu()">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -154,6 +175,16 @@ if (!is_logged_in()) {
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 11h.01"></path><path d="M12 20v-6"></path><path d="M8 20v-6"></path></svg>
                             <span>Salary</span>
                         </a>
+                        <a href="?page=contacts" class="menu-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span>Company Directory</span>
+                        </a>
+                        <?php if (is_admin()): ?>
+                        <a href="?page=admin_management" class="menu-item">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"></path></svg>
+                            <span>Admin Management</span>
+                        </a>
+                        <?php endif; ?>
                         <hr>
                         <a href="?page=logout" class="menu-item text-danger">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3H6a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h4M16 17l5-5m0 0l-5-5m5 5H9"></path></svg>
@@ -575,6 +606,148 @@ if (!is_logged_in()) {
                                 </div>
                             <?php endif; ?>
                         </div>
+                    </section>
+                </main>
+            </div>
+
+        <?php
+        // ============================================================
+        // COMPANY DIRECTORY PAGE
+        // ============================================================
+        elseif ($route === 'contacts'):
+            require_login();
+            $contacts = get_all_contacts($db, false);
+        ?>
+            <div class="page-container">
+                <header class="app-header">
+                    <a href="?page=dashboard" class="btn-back">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </a>
+                    <h1>Company Directory</h1>
+                </header>
+
+                <main class="app-main">
+                    <?php if (is_admin()): ?>
+                    <section class="card">
+                        <h2>Add New Contact</h2>
+                        <form onsubmit="addContact(event)">
+                            <div class="form-group">
+                                <label for="contact_name">Name</label>
+                                <input type="text" id="contact_name" name="name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contact_role">Role/Department</label>
+                                <input type="text" id="contact_role" name="role" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contact_phone">Phone</label>
+                                <input type="tel" id="contact_phone" name="phone" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="contact_email">Email (optional)</label>
+                                <input type="email" id="contact_email" name="email">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Add Contact</button>
+                        </form>
+                    </section>
+                    <?php endif; ?>
+
+                    <section class="card">
+                        <h2>Contact List</h2>
+                        <?php if (count($contacts) > 0): ?>
+                            <div class="contact-list" id="contactList">
+                                <?php foreach ($contacts as $contact): ?>
+                                    <div class="contact-item" data-id="<?php echo $contact['id']; ?>">
+                                        <div class="contact-info">
+                                            <h3><?php echo htmlspecialchars($contact['name']); ?></h3>
+                                            <p><?php echo htmlspecialchars($contact['role']); ?></p>
+                                            <p><strong>Phone:</strong> <?php echo htmlspecialchars($contact['phone']); ?></p>
+                                            <?php if ($contact['email']): ?>
+                                                <p><strong>Email:</strong> <?php echo htmlspecialchars($contact['email']); ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (is_admin()): ?>
+                                        <div class="contact-actions">
+                                            <button class="btn btn-sm btn-secondary" onclick="editContact(<?php echo $contact['id']; ?>, '<?php echo addslashes($contact['name']); ?>', '<?php echo addslashes($contact['role']); ?>', '<?php echo addslashes($contact['phone']); ?>', '<?php echo addslashes($contact['email']); ?>')">Edit</button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteContact(<?php echo $contact['id']; ?>)">Delete</button>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-muted">No contacts available</p>
+                        <?php endif; ?>
+                    </section>
+                </main>
+            </div>
+
+        <?php
+        // ============================================================
+        // ADMIN MANAGEMENT PAGE (Admin Only)
+        // ============================================================
+        elseif ($route === 'admin_management'):
+            require_admin();
+            $admins = get_all_admins($db);
+        ?>
+            <div class="page-container">
+                <header class="app-header">
+                    <a href="?page=admin" class="btn-back">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </a>
+                    <h1>Admin Management</h1>
+                </header>
+
+                <main class="app-main">
+                    <section class="card">
+                        <h2>Add New Admin</h2>
+                        <form onsubmit="addAdmin(event)">
+                            <div class="form-group">
+                                <label for="admin_name">Name</label>
+                                <input type="text" id="admin_name" name="name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="admin_email">Email</label>
+                                <input type="email" id="admin_email" name="email" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="admin_phone">Phone</label>
+                                <input type="tel" id="admin_phone" name="phone" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="admin_pin">PIN (4 digits)</label>
+                                <input type="password" id="admin_pin" name="pin" required pattern="[0-9]{4}" maxlength="4" placeholder="4-digit PIN">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Add Admin</button>
+                        </form>
+                    </section>
+
+                    <section class="card">
+                        <h2>All Administrators</h2>
+                        <?php if (count($admins) > 0): ?>
+                            <div class="admin-list">
+                                <?php foreach ($admins as $admin): ?>
+                                    <div class="admin-item">
+                                        <div class="admin-info">
+                                            <h3><?php echo htmlspecialchars($admin['name']); ?></h3>
+                                            <p><strong>Email:</strong> <?php echo htmlspecialchars($admin['email']); ?></p>
+                                            <p><strong>Phone:</strong> <?php echo htmlspecialchars($admin['phone']); ?></p>
+                                            <p><small>Added: <?php echo date('M d, Y', strtotime($admin['created_at'])); ?></small></p>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-muted">No administrators found</p>
+                        <?php endif; ?>
                     </section>
                 </main>
             </div>

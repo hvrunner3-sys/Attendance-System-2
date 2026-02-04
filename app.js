@@ -793,6 +793,408 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
+// NOTIFICATION HANDLERS
+// ============================================================
+
+/**
+ * Toggle notification dropdown
+ */
+function toggleNotifications() {
+    const dropdown = document.getElementById('notificationDropdown');
+    const isActive = dropdown.classList.contains('active');
+
+    if (isActive) {
+        dropdown.classList.remove('active');
+    } else {
+        dropdown.classList.add('active');
+        loadNotifications();
+    }
+
+    // Close on outside click
+    if (!isActive) {
+        setTimeout(() => {
+            document.addEventListener('click', closeNotificationsOnClick);
+        }, 100);
+    }
+}
+
+function closeNotificationsOnClick(e) {
+    const dropdown = document.getElementById('notificationDropdown');
+    const bell = document.querySelector('.notification-bell');
+
+    if (!dropdown.contains(e.target) && !bell.contains(e.target)) {
+        dropdown.classList.remove('active');
+        document.removeEventListener('click', closeNotificationsOnClick);
+    }
+}
+
+/**
+ * Load notifications
+ */
+async function loadNotifications() {
+    const list = document.getElementById('notificationList');
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'get_notifications');
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.notifications) {
+            if (result.notifications.length === 0) {
+                list.innerHTML = '<div class="notification-empty">No notifications</div>';
+            } else {
+                list.innerHTML = result.notifications.map(notif => `
+                    <div class="notification-item ${notif.is_read ? '' : 'unread'}" onclick="markNotificationRead(${notif.id}, '${notif.link || ''}')">
+                        <div class="notification-icon">${getNotificationIcon(notif.type)}</div>
+                        <div class="notification-content">
+                            <div class="notification-title">${notif.title}</div>
+                            <div class="notification-message">${notif.message}</div>
+                            <div class="notification-time">${formatNotificationTime(notif.created_at)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Update badge
+            updateNotificationBadge(result.unread_count);
+        }
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        list.innerHTML = '<div class="notification-empty">Error loading notifications</div>';
+    }
+}
+
+/**
+ * Get notification icon based on type
+ */
+function getNotificationIcon(type) {
+    const icons = {
+        'leave_approved': '✓',
+        'leave_rejected': '✗',
+        'expense_approved': '💰',
+        'expense_rejected': '✗',
+        'admin': '👤',
+        'default': '🔔'
+    };
+    return icons[type] || icons['default'];
+}
+
+/**
+ * Format notification time
+ */
+function formatNotificationTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000); // seconds
+
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+
+    return date.toLocaleDateString();
+}
+
+/**
+ * Mark notification as read
+ */
+async function markNotificationRead(notificationId, link) {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'mark_notification_read');
+        formData.append('notification_id', notificationId);
+
+        await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        // Reload notifications
+        await loadNotifications();
+
+        // Navigate if link exists
+        if (link) {
+            window.location.href = link;
+        }
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+    }
+}
+
+/**
+ * Mark all notifications as read
+ */
+async function markAllNotificationsRead() {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'mark_all_notifications_read');
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('All notifications marked as read', 'success');
+            await loadNotifications();
+        }
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        showToast('Error marking notifications as read', 'error');
+    }
+}
+
+/**
+ * Update notification badge
+ */
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notificationBadge');
+
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    } else if (count > 0) {
+        // Create badge if it doesn't exist
+        const bell = document.querySelector('.notification-bell');
+        const newBadge = document.createElement('span');
+        newBadge.className = 'notification-badge';
+        newBadge.id = 'notificationBadge';
+        newBadge.textContent = count;
+        bell.appendChild(newBadge);
+    }
+}
+
+/**
+ * Auto-refresh notifications every 30 seconds
+ */
+setInterval(() => {
+    if (document.getElementById('notificationDropdown')) {
+        loadNotifications();
+    }
+}, 30000);
+
+// ============================================================
+// CONTACT MANAGEMENT HANDLERS
+// ============================================================
+
+/**
+ * Add contact
+ */
+async function addContact(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('contact_name').value;
+    const role = document.getElementById('contact_role').value;
+    const phone = document.getElementById('contact_phone').value;
+    const email = document.getElementById('contact_email').value;
+
+    if (!name || !role || !phone) {
+        showToast('Please fill all required fields', 'warning');
+        return;
+    }
+
+    showLoading('Adding contact...');
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'add_contact');
+        formData.append('name', name);
+        formData.append('role', role);
+        formData.append('phone', phone);
+        formData.append('email', email);
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        hideLoading();
+
+        if (result.success) {
+            showToast('Contact added successfully', 'success');
+            document.getElementById('contact_name').value = '';
+            document.getElementById('contact_role').value = '';
+            document.getElementById('contact_phone').value = '';
+            document.getElementById('contact_email').value = '';
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showToast('Error adding contact', 'error');
+    }
+}
+
+/**
+ * Edit contact
+ */
+async function editContact(contactId, name, role, phone, email) {
+    const newName = prompt('Name:', name);
+    if (newName === null) return;
+
+    const newRole = prompt('Role:', role);
+    if (newRole === null) return;
+
+    const newPhone = prompt('Phone:', phone);
+    if (newPhone === null) return;
+
+    const newEmail = prompt('Email:', email);
+    if (newEmail === null) return;
+
+    showLoading('Updating contact...');
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'edit_contact');
+        formData.append('contact_id', contactId);
+        formData.append('name', newName);
+        formData.append('role', newRole);
+        formData.append('phone', newPhone);
+        formData.append('email', newEmail);
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        hideLoading();
+
+        if (result.success) {
+            showToast('Contact updated successfully', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showToast('Error updating contact', 'error');
+    }
+}
+
+/**
+ * Delete contact
+ */
+async function deleteContact(contactId) {
+    if (!confirm('Delete this contact?')) {
+        return;
+    }
+
+    showLoading('Deleting contact...');
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'delete_contact');
+        formData.append('contact_id', contactId);
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        hideLoading();
+
+        if (result.success) {
+            showToast('Contact deleted successfully', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showToast('Error deleting contact', 'error');
+    }
+}
+
+// ============================================================
+// ADMIN MANAGEMENT HANDLERS
+// ============================================================
+
+/**
+ * Add admin
+ */
+async function addAdmin(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('admin_name').value;
+    const email = document.getElementById('admin_email').value;
+    const phone = document.getElementById('admin_phone').value;
+    const pin = document.getElementById('admin_pin').value;
+
+    if (!name || !email || !phone || !pin) {
+        showToast('Please fill all required fields', 'warning');
+        return;
+    }
+
+    if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+        showToast('PIN must be 4 digits', 'warning');
+        return;
+    }
+
+    showLoading('Adding admin...');
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'add_admin');
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('phone', phone);
+        formData.append('pin', pin);
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        hideLoading();
+
+        if (result.success) {
+            showToast('Admin added successfully', 'success');
+            document.getElementById('admin_name').value = '';
+            document.getElementById('admin_email').value = '';
+            document.getElementById('admin_phone').value = '';
+            document.getElementById('admin_pin').value = '';
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Error:', error);
+        showToast('Error adding admin', 'error');
+    }
+}
+
+// ============================================================
 // PWA SUPPORT (OPTIONAL - ADVANCED)
 // ============================================================
 

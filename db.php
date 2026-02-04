@@ -484,6 +484,265 @@ function get_monthly_attendance_summary($db, $user_id, $year, $month) {
 }
 
 /**
+ * NOTIFICATION FUNCTIONS
+ */
+
+/**
+ * Create a notification for a user
+ */
+function create_notification($db, $user_id, $type, $title, $message, $link = null) {
+    $created_at = get_server_time_string();
+
+    $stmt = $db->prepare("
+        INSERT INTO notifications (user_id, type, title, message, link, is_read, created_at)
+        VALUES (?, ?, ?, ?, ?, 0, ?)
+    ");
+    $stmt->bind_param("isssss", $user_id, $type, $title, $message, $link, $created_at);
+
+    if ($stmt->execute()) {
+        return [
+            'success' => true,
+            'notification_id' => $stmt->insert_id
+        ];
+    }
+
+    return ['success' => false];
+}
+
+/**
+ * Get user notifications
+ */
+function get_user_notifications($db, $user_id, $limit = 20, $unread_only = false) {
+    if ($unread_only) {
+        $stmt = $db->prepare("
+            SELECT * FROM notifications
+            WHERE user_id = ? AND is_read = 0
+            ORDER BY created_at DESC
+            LIMIT ?
+        ");
+        $stmt->bind_param("ii", $user_id, $limit);
+    } else {
+        $stmt = $db->prepare("
+            SELECT * FROM notifications
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        ");
+        $stmt->bind_param("ii", $user_id, $limit);
+    }
+
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+/**
+ * Get unread notification count
+ */
+function get_unread_notification_count($db, $user_id) {
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count FROM notifications
+        WHERE user_id = ? AND is_read = 0
+    ");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    return $result['count'] ?? 0;
+}
+
+/**
+ * Mark notification as read
+ */
+function mark_notification_read($db, $notification_id, $user_id) {
+    $stmt = $db->prepare("
+        UPDATE notifications
+        SET is_read = 1
+        WHERE id = ? AND user_id = ?
+    ");
+    $stmt->bind_param("ii", $notification_id, $user_id);
+
+    return $stmt->execute();
+}
+
+/**
+ * Mark all notifications as read for a user
+ */
+function mark_all_notifications_read($db, $user_id) {
+    $stmt = $db->prepare("
+        UPDATE notifications
+        SET is_read = 1
+        WHERE user_id = ? AND is_read = 0
+    ");
+    $stmt->bind_param("i", $user_id);
+
+    return $stmt->execute();
+}
+
+/**
+ * COMPANY CONTACTS FUNCTIONS
+ */
+
+/**
+ * Add a contact
+ */
+function add_contact($db, $name, $role, $phone, $email, $created_by) {
+    $created_at = get_server_time_string();
+
+    $stmt = $db->prepare("
+        INSERT INTO company_contacts (name, role, phone, email, is_active, created_by, created_at)
+        VALUES (?, ?, ?, ?, 1, ?, ?)
+    ");
+    $stmt->bind_param("ssssis", $name, $role, $phone, $email, $created_by, $created_at);
+
+    if ($stmt->execute()) {
+        log_action($db, $created_by, 'CONTACT_ADDED', "Added contact: $name", $stmt->insert_id);
+        return [
+            'success' => true,
+            'message' => 'Contact added successfully',
+            'contact_id' => $stmt->insert_id
+        ];
+    }
+
+    return ['success' => false, 'message' => 'Failed to add contact'];
+}
+
+/**
+ * Edit a contact
+ */
+function edit_contact($db, $contact_id, $name, $role, $phone, $email, $updated_by) {
+    $stmt = $db->prepare("
+        UPDATE company_contacts
+        SET name = ?, role = ?, phone = ?, email = ?
+        WHERE id = ?
+    ");
+    $stmt->bind_param("ssssi", $name, $role, $phone, $email, $contact_id);
+
+    if ($stmt->execute()) {
+        log_action($db, $updated_by, 'CONTACT_UPDATED', "Updated contact: $name", $contact_id);
+        return [
+            'success' => true,
+            'message' => 'Contact updated successfully'
+        ];
+    }
+
+    return ['success' => false, 'message' => 'Failed to update contact'];
+}
+
+/**
+ * Delete a contact (soft delete)
+ */
+function delete_contact($db, $contact_id, $deleted_by) {
+    $stmt = $db->prepare("
+        UPDATE company_contacts
+        SET is_active = 0
+        WHERE id = ?
+    ");
+    $stmt->bind_param("i", $contact_id);
+
+    if ($stmt->execute()) {
+        log_action($db, $deleted_by, 'CONTACT_DELETED', "Deleted contact", $contact_id);
+        return [
+            'success' => true,
+            'message' => 'Contact deleted successfully'
+        ];
+    }
+
+    return ['success' => false, 'message' => 'Failed to delete contact'];
+}
+
+/**
+ * Get all active contacts
+ */
+function get_all_contacts($db, $include_inactive = false) {
+    if ($include_inactive) {
+        $stmt = $db->prepare("
+            SELECT * FROM company_contacts
+            ORDER BY name ASC
+        ");
+    } else {
+        $stmt = $db->prepare("
+            SELECT * FROM company_contacts
+            WHERE is_active = 1
+            ORDER BY name ASC
+        ");
+    }
+
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+/**
+ * ADMIN MANAGEMENT FUNCTIONS
+ */
+
+/**
+ * Add a new admin
+ */
+function add_new_admin($db, $name, $email, $phone, $pin, $created_by) {
+    // Check if email already exists
+    $stmt = $db->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        return [
+            'success' => false,
+            'message' => 'Email already exists'
+        ];
+    }
+
+    // Insert new admin
+    $role = ROLE_ADMIN;
+    $created_at = get_server_time_string();
+
+    $stmt = $db->prepare("
+        INSERT INTO users (name, email, phone, role, pin, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ");
+    $stmt->bind_param("ssssss", $name, $email, $phone, $role, $pin, $created_at);
+
+    if ($stmt->execute()) {
+        $new_admin_id = $stmt->insert_id;
+        log_action($db, $created_by, 'ADMIN_ADDED', "Added new admin: $name", $new_admin_id);
+
+        // Send notification to the new admin
+        create_notification(
+            $db,
+            $new_admin_id,
+            'admin',
+            'Welcome as Admin',
+            'You have been added as an administrator. Your PIN is: ' . $pin,
+            null
+        );
+
+        return [
+            'success' => true,
+            'message' => 'Admin added successfully',
+            'admin_id' => $new_admin_id
+        ];
+    }
+
+    return ['success' => false, 'message' => 'Failed to add admin'];
+}
+
+/**
+ * Get all admins
+ */
+function get_all_admins($db) {
+    $stmt = $db->prepare("
+        SELECT id, name, email, phone, created_at
+        FROM users
+        WHERE role = ?
+        ORDER BY name ASC
+    ");
+    $role = ROLE_ADMIN;
+    $stmt->bind_param("s", $role);
+    $stmt->execute();
+
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+/**
  * Calculate salary for month
  */
 function calculate_monthly_salary($db, $user_id, $year, $month) {
