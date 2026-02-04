@@ -1,0 +1,62 @@
+{
+  "name": "Attendance & Payroll System",
+  "short_name": "A+P",
+  "description": "Attendance, Leave, Payroll & Expense Management System",
+  "start_url": "./index.php",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#1E40AF",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231E40AF' width='192' height='192'/><text x='50%' y='50%' font-size='96' fill='white' text-anchor='middle' dominant-baseline='central' font-weight='bold'>A</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231E40AF' width='512' height='512'/><text x='50%' y='50%' font-size='256' fill='white' text-anchor='middle' dominant-baseline='central' font-weight='bold'>A</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Punch In",
+      "short_name": "Punch In",
+      "description": "Quickly punch in from home screen",
+      "url": "./index.php?page=dashboard",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231E40AF' width='192' height='192'/><circle cx='96' cy='80' r='40' fill='white'/><path d='M50 160 Q50 120 96 120 Q142 120 142 160' fill='white'/></svg>",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "View Leaves",
+      "short_name": "Leaves",
+      "description": "View and manage your leaves",
+      "url": "./index.php?page=leaves",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%2310B981' width='192' height='192'/><path d='M60 70 L110 40 L120 100 L80 120 Z' fill='white'/></svg>",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23f3f4f6' width='540' height='720'/><rect fill='%231E40AF' y='0' width='540' height='120'/><text x='270' y='60' font-size='32' fill='white' text-anchor='middle' font-weight='bold'>Dashboard</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ]
+}

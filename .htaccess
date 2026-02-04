@@ -1,0 +1,64 @@
+# Apache Configuration for Hostinger Shared Hosting
+
+# Enable HTTPS redirect
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Prevent directory listing
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-UA-Compatible "IE=edge"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Prevent access to config files
+<FilesMatch "(config\.php|setup\.sql|error\.log|\.env)">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Prevent access to backup files
+<FilesMatch "\.(bak|backup|old|tmp|swp)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Allow access to uploads folder
+<Directory "/uploads">
+    <Files "*.php">
+        Deny from all
+    </Files>
+</Directory>
+
+# Set PHP settings (adjust as needed for your hosting)
+<IfModule mod_php.c>
+    php_flag display_errors off
+    php_flag log_errors on
+    php_value max_upload_size 5M
+    php_value post_max_size 5M
+    php_value upload_max_filesize 5M
+</IfModule>
+
+# Cache static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType application/json "access plus 1 day"
+</IfModule>
+
+# GZip compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>

@@ -1,0 +1,2 @@
+[05-Feb-2026 00:05:41 Asia/Kolkata] PHP Warning:  Undefined array key "HTTP_HOST" in /tmp/cc-agent/63363860/project/config.php on line 37
+[05-Feb-2026 00:05:41 Asia/Kolkata] PHP Fatal error:  Cannot redeclare function get_current_user() in /tmp/cc-agent/63363860/project/auth.php on line 37
